@@ -5,34 +5,37 @@ function listNetwork()
 end
 
 function join(msg)
-	print("hey, " .. msg.src .. " wants to work")
+	print(msg.src .. " wants to work")
 	table.insert(workers, msg.src)
 end
 
 function leave(msg)
-	print("hey, " .. msg.src .. " wants to leave")
+	print(msg.src .. " wants to leave")
 	table.remove(workers, msg.src)
 	alua.send_event(msg.src, "release")
 end
 
 function checkout(msg)
-	print("hey, " .. msg.src .. " wants some work, the poor fella")
+	print(msg.src .. " requested work")
+	jobData.nextNumber = jobData.nextNumber + 1
 	alua.send_event(msg.src, "work", jobData)
 end
 
 function checkin(msg)
-	print("hey, got " .. msg.data .. " from " .. msg.src)
-	jobData.nextNumber = msg.data.nextNumber
-	if msg.data.nextNumber > 10 then
+	print("got result " .. msg.data.nextNumber .. " from " .. msg.src)
+	if jobData.nextNumber > 10 then
 		alua.send_event(master, "printResult", "done... doing... whatever...")
 		for i, worker in pairs(workers) do
 			alua.send_event(worker, "release")
 		end
+		alua.quit()
+	else
+		alua.send_event(msg.src, "start", jobData)
 	end
 end
 
 function searchTree(msg)
-	print("hey, " .. msg.src .. " wants us to search his tree 8)")
+	print("got searchTree command from " .. msg.src)
 	master = msg.src
 
 	for i, worker in pairs(workers) do
