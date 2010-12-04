@@ -40,7 +40,7 @@ end
 function searchTree(msg)
 	local n = msg.data.n
 	local p = msg.data.p
-	
+
 	local cost = {}
 	local root = {}
 
@@ -52,42 +52,45 @@ function searchTree(msg)
 			root[i][j] = 0
 		end
 	end
-
-	for low = n + 1, 1, -1 do
-		cost[low][low] = 0
-		root[low][low] = low
 	
-		for high = low + 1, n + 1 do
-			bestcost = 10000000000
-			tempCost = 0
+	for i = 1, n do
+		cost[i][i] = 0;
+		root[i][i] = i;
 		
-			for j = low, high - 1 do
-				tempCost = tempCost + p[j]
-			end
-		
-			for r = low, high - 1 do
-				rcost = tempCost + cost[low][r] + cost[r + 1][high]
-			
-				if rcost < bestcost then
-					bestcost = rcost
-					bestroot = r
-				end
-			end
-		
-			cost[low][high] = bestcost
-			root[low][high] = bestroot
-		end
+		cost[i][i + 1] = p[i];
+		root[i][i + 1] = i;
 	end
-
-	--printMatrix(n + 1, n + 1, cost, "cost")
-	--print()
-	--printMatrix(n + 1, n + 1, root, "root")
-
-	treeOutput(root, 1, n)
+	cost[n + 1][n + 1] = 0;
+	root[n + 1][n + 1] = n + 1;
+	
+	local daemons = alua.getdaemons()
+	for i, daemon in pairs(daemons) do
+		local leftIndex = (i + #daemons - 2) % #daemons + 1
+		local rightIndex = i % #daemons + 1
+		local partData = {
+			n = n,
+			p = p,
+			cost = cost,
+			root = root,
+			leftDaemon = daemons[leftIndex],
+			rightDaemon = daemons[rightIndex]
+		}
+		alua.send_event(daemon, "searchTreePart", partData)
+	end
 end
 
 function searchTreePart(msg)
+	local n = msg.data.n
+	local p = msg.data.p
+	local cost = msg.data.cost
+	local root = msg.data.root
+	local leftDaemon = msg.data.leftDaemon
+	local rightDaemon = msg.data.rightDaemon
 	
+	--print("my left daemon is " .. leftDaemon)
+	--print("my right daemon is " .. rightDaemon)
+	--printMatrix(n + 1, n + 1, cost, "cost")
+	--printMatrix(n + 1, n + 1, root, "root")
 end
 
 print(alua.id .. " got code!")
