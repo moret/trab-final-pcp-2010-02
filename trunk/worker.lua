@@ -7,9 +7,17 @@ function start(msg)
 end
 
 function work(msg)
-	print("got work on " .. msg.data.nextNumber .. "... don't know how")
-	msg.data.nextNumber = msg.data.nextNumber + 1
-	alua.send_event(msg.src, "checkin", msg.data)
+	print("got work on " .. msg.data.x .. "," .. msg.data.y)
+	
+	local workData = {
+		nextCost = msg.data.x + msg.data.y,
+		nextRoot = msg.data.x * msg.data.y,
+		x = msg.data.x,
+		y = msg.data.y
+	}
+	
+	alua.send_event(msg.src, "checkin", workData)
+	alua.send_event(msg.src, "checkout")
 end
 
 function release(msg)
@@ -34,8 +42,8 @@ end
 jobData = {}
 
 -- Connect to the informed daemon
-local ip = arg[1]
-local port = arg[2]
+ip = arg[1]
+port = arg[2]
 alua.connect(ip, port, connectCB)
 alua.loop()
 alua.quit()

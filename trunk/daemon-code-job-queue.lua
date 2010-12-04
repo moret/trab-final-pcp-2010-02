@@ -1,3 +1,12 @@
+function createMatrix(n)
+	local matrix = {}
+	for i = 1, n do
+		matrix[i] = {}
+	end
+	
+	return matrix
+end
+
 function listNetwork()
 	for i, daemon in pairs(alua.getdaemons()) do
 		print(i, daemon)
@@ -17,26 +26,52 @@ end
 
 function checkout(msg)
 	print(msg.src .. " requested work")
-	jobData.nextNumber = jobData.nextNumber + 1
-	alua.send_event(msg.src, "work", jobData)
+	if jobData.nextCell.y > jobData.n + 1 then
+		alua.send_event(msg.src, "release")
+	else
+		alua.send_event(msg.src, "work", jobData.nextCell)
+	end
+	
+	jobData.nextCell.x = jobData.nextCell.x + 1
+	if jobData.nextCell.x > jobData.n + 1 then
+		jobData.nextCell.x = 1
+		jobData.nextCell.y = jobData.nextCell.y + 1
+	end
 end
 
 function checkin(msg)
-	print("got result " .. msg.data.nextNumber .. " from " .. msg.src)
-	if jobData.nextNumber > 10 then
-		alua.send_event(master, "printResult", "done... doing... whatever...")
+	print("got result " .. msg.data.x .. "," .. msg.data.y .. " from " .. msg.src)
+	
+	jobData.cost[msg.data.x][msg.data.y] = msg.data.nextCost
+	jobData.root[msg.data.x][msg.data.y] = msg.data.nextRoot
+	
+	jobData.worksLeft = jobData.worksLeft - 1
+	
+	if jobData.worksLeft <= 0 then
+		alua.send_event(master, "printResult", jobData)
 		for i, worker in pairs(workers) do
 			alua.send_event(worker, "release")
 		end
+		
+		print("done, will run no more")
 		alua.quit()
-	else
-		alua.send_event(msg.src, "start", jobData)
 	end
 end
 
 function searchTree(msg)
 	print("got searchTree command from " .. msg.src)
 	master = msg.src
+	
+	jobData = {}
+	
+	jobData.n = msg.data.n
+	jobData.p = msg.data.p	
+	
+	jobData.cost = createMatrix(msg.data.n + 1)
+	jobData.root = createMatrix(msg.data.n + 1)
+	
+	jobData.nextCell = {x = 1, y = 1}
+	jobData.worksLeft = (msg.data.n + 1) * (msg.data.n + 1)
 
 	for i, worker in pairs(workers) do
 		alua.send_event(worker, "start", jobData)
@@ -47,11 +82,6 @@ print(alua.id .. " got code!")
 listNetwork()
 
 workers = {}
-jobData = {
-	nextNumber = 1,
-	p = {5, 6, 3, 7, 2, 7, 3, 9, 1, 4},
-	cost = {}
-}
 
 alua.reg_event("searchTree", searchTree)
 alua.reg_event("join", join)
