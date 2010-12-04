@@ -67,7 +67,8 @@ function searchTree(msg)
 	for i, daemon in pairs(daemons) do
 		local leftIndex = (i + #daemons - 2) % #daemons + 1
 		local rightIndex = i % #daemons + 1
-		local partData = {
+		local daemonData = {
+			pid = i,
 			n = n,
 			p = p,
 			cost = cost,
@@ -75,27 +76,76 @@ function searchTree(msg)
 			leftDaemon = daemons[leftIndex],
 			rightDaemon = daemons[rightIndex]
 		}
-		alua.send_event(daemon, "searchTreePart", partData)
+		alua.send_event(daemon, "searchTreeDaemon", daemonData)
 	end
 end
 
-function searchTreePart(msg)
-	local n = msg.data.n
-	local p = msg.data.p
-	local cost = msg.data.cost
-	local root = msg.data.root
-	local leftDaemon = msg.data.leftDaemon
-	local rightDaemon = msg.data.rightDaemon
+function searchTreeDaemon(msg)
+	pid = msg.data.pid
+	n = msg.data.n
+	p = msg.data.p
+	cost = msg.data.cost
+	root = msg.data.root
+	leftDaemon = msg.data.leftDaemon
+	rightDaemon = msg.data.rightDaemon
+	np = #(alua.getdaemons())
 	
 	--print("my left daemon is " .. leftDaemon)
 	--print("my right daemon is " .. rightDaemon)
 	--printMatrix(n + 1, n + 1, cost, "cost")
 	--printMatrix(n + 1, n + 1, root, "root")
+	
+	local partData = {
+		costRow = cost[pid - 2],
+		rootRow = root[pid - 2],
+		x = pid - 2,
+		y = pid
+	}
+	
+	alua.send_event(alua.id, "searchTreePart", partData)
+end
+
+function searchTreePart(msg)
+	local costRow = msg.data.costRow
+	local rootRow = msg.data.rootRow
+	local x = msg.data.x
+	local y = msg.data.y
+	
+	if costRow then
+		cost[x] = costRow
+		root[x] = rootRow
+	end
+
+	-- The algorithm itself
+	local bestcost = 10000000000
+	local tempCost = 0
+	
+	for i = x, y - 1 do
+		tempCost = tempCost + p[i]
+	end
+	
+	for i = x, y - 1 do
+		local rcost = tempCost + cost[x][i] + cost[i + 1][y]
+		
+		if rcost < bestcost then
+			bestcost = rcost
+			bestroot = i
+		end
+	end
+	
+	cost[x][y] = bestcost
+	root[x][y] = bestroot
+	
+	local leftDaemonData = {
+	}
+	
+	alua.send_event(rightDaemon, "searchTreePart", )
 end
 
 print(alua.id .. " got code!")
 listNetwork()
 
 alua.reg_event("searchTree", searchTree)
+alua.reg_event("searchTreeDaemon", searchTreeDaemon)
 alua.reg_event("searchTreePart", searchTreePart)
 
