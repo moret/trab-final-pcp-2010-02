@@ -1,7 +1,23 @@
 require("alua")
 
+function printMatrix(n, m, matrix, matrixName)
+	io.write(matrixName)
+	for j = 1, n do
+		io.write(string.format("%5d  ", j))
+	end
+	print()
+	for i = 1, n do
+		io.write(i .. ":  ")
+		for j = 1, m do
+			io.write(string.format("%5d, ", matrix[i][j]))
+		end
+		print()
+	end
+end
+
 function printResult(msg)
-	print(msg.data)
+	printMatrix(n + 1, n + 1, msg.data.cost, "cost")
+	printMatrix(n + 1, n + 1, msg.data.root, "root")
 	alua.quit()
 end
 
