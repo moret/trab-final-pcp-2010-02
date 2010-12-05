@@ -7,13 +7,38 @@ function start(msg)
 end
 
 function work(msg)
-	print("got work on " .. msg.data.x .. "," .. msg.data.y)
+	print("got work on " .. msg.data.nextCell.x .. "," .. msg.data.nextCell.y)
 	
+	jobData.cost = msg.data.cost
+	jobData.root = msg.data.root
+	
+	local x = msg.data.nextCell.x
+	local y = msg.data.nextCell.y
+	
+	local bestcost = 10000000000
+	local tempCost = 0
+	
+	for i = x, y - 1 do
+		tempCost = tempCost + jobData.p[i]
+	end
+	
+	for i = x, y - 1 do
+		local rcost = tempCost + jobData.cost[x][i] + jobData.cost[i + 1][y]
+		
+		if rcost < bestcost then
+			bestcost = rcost
+			bestroot = i
+		end
+	end
+	
+	jobData.cost[x][y] = bestcost
+	jobData.root[x][y] = bestroot
+
 	local workData = {
-		nextCost = msg.data.x + msg.data.y,
-		nextRoot = msg.data.x * msg.data.y,
-		x = msg.data.x,
-		y = msg.data.y
+		nextCost = bestcost,
+		nextRoot = bestroot,
+		x = x,
+		y = y
 	}
 	
 	alua.send_event(msg.src, "checkin", workData)
