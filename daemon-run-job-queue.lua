@@ -3,6 +3,7 @@ require("posix")
 
 function connectCB(reply)
 	print("connected to " .. reply.id)
+	if __debug then alua.send(alua.daemonid, "__debug = true") end
 	alua.send(alua.daemonid, code)
 	alua.quit()
 end

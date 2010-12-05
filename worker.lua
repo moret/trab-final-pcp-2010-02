@@ -1,13 +1,24 @@
 require("alua")
+require("socket")
+
+function log(s)
+	if __debug then print(s) end
+end
+
+function sleep(sec)
+	log("going to sleep for a while...")
+	socket.select(nil, nil, sec)
+end
 
 function start(msg)
-	print("got ok to start from " .. msg.src)
+	print("new job size " .. msg.data.n)
 	jobData	= msg.data
+	jobAvailable = true
 	alua.send_event(msg.src, "checkout")
 end
 
 function work(msg)
-	print("got work on " .. msg.data.nextCell.x .. "," .. msg.data.nextCell.y)
+	log("got work on " .. msg.data.nextCell.x .. "," .. msg.data.nextCell.y)
 	
 	jobData.cost = msg.data.cost
 	jobData.root = msg.data.root
@@ -45,16 +56,30 @@ function work(msg)
 	alua.send_event(msg.src, "checkout")
 end
 
+function later(msg)
+	-- nothing to work on yet, come back later
+	sleep(1)
+	if jobAvailable then
+		alua.send_event(msg.src, "checkout")
+	end
+end
+
+function done(msg)
+	jobAvailable = false
+end
+
 function release(msg)
-	print("release event from " .. msg.src .. " - bye!")
+	log("release event from " .. msg.src .. " - bye!")
 	alua.quit()
 end
 
 function connectCB(reply)
-	print("connected to " .. reply.id)
+	log("connected to " .. reply.id)
 	
 	alua.reg_event("start", start)
 	alua.reg_event("work", work)
+	alua.reg_event("later", later)
+	alua.reg_event("done", done)
 	alua.reg_event("release", release)
 	
 	alua.send_event(alua.daemonid, "join")
@@ -65,6 +90,7 @@ if not (#arg == 2) then
 end
 
 jobData = {}
+jobAvailable = false
 
 -- Connect to the informed daemon
 ip = arg[1]

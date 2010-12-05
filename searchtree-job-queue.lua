@@ -15,10 +15,21 @@ function printMatrix(n, m, matrix, matrixName)
 	end
 end
 
+function treeOutput(root, low, high)
+	print("tree: " .. low .. " - " .. high .. "; root: " .. root[low][high + 1])
+	if low < root[low][high + 1] - 1 then
+		treeOutput(root, low, root[low][high + 1] - 1)
+	end
+	if root[low][high + 1] < high - 1 then
+		treeOutput(root, root[low][high + 1] + 1, high)
+	end
+end
+
 function printResult(msg)
-	printMatrix(n + 1, n + 1, msg.data.cost, "cost")
-	print()
-	printMatrix(n + 1, n + 1, msg.data.root, "root")
+	--printMatrix(n + 1, n + 1, msg.data.cost, "cost")
+	--print()
+	--printMatrix(n + 1, n + 1, msg.data.root, "root")
+	treeOutput(msg.data.root, 1, n)
 	alua.quit()
 end
 
