@@ -40,10 +40,9 @@ function checkout(msg)
 		
 		local workData = {
 			nextCell = nextCell,
-			cost = jobData.cost,
-			root = jobData.root
+			costRow = jobData.cost[nextCell.x],
+			costCol = jobData.costInv[nextCell.y]
 		}
-		-- sending the whole table - improve that!
 		alua.send_event(msg.src, "work", workData)
 	else
 		alua.send_event(msg.src, "later")
@@ -54,6 +53,7 @@ function checkin(msg)
 	log("got result " .. msg.data.x .. "," .. msg.data.y .. " from " .. msg.src)
 	
 	jobData.cost[msg.data.x][msg.data.y] = msg.data.nextCost
+	jobData.costInv[msg.data.y][msg.data.x] = msg.data.nextCost
 	jobData.root[msg.data.x][msg.data.y] = msg.data.nextRoot
 	
 	jobData.controlTable[msg.data.x][msg.data.y] = true
@@ -101,14 +101,19 @@ function searchTree(msg)
 	jobData.cost = createMatrix(msg.data.n + 1)
 	jobData.root = createMatrix(msg.data.n + 1)
 
+	jobData.costInv = createMatrix(msg.data.n + 1)
+
 	for i = 1, jobData.n do
 		jobData.cost[i][i] = 0
+		jobData.costInv[i][i] = 0
 		jobData.root[i][i] = i
 		
 		jobData.cost[i][i + 1] = jobData.p[i]
+		jobData.costInv[i + 1][i] = jobData.p[i]
 		jobData.root[i][i + 1] = i
 	end
 	jobData.cost[jobData.n + 1][jobData.n + 1] = 0
+	jobData.costInv[jobData.n + 1][jobData.n + 1] = 0
 	jobData.root[jobData.n + 1][jobData.n + 1] = jobData.n + 1
 	
 	-- fill the initial queue

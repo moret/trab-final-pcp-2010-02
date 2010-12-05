@@ -20,8 +20,8 @@ end
 function work(msg)
 	log("got work on " .. msg.data.nextCell.x .. "," .. msg.data.nextCell.y)
 	
-	jobData.cost = msg.data.cost
-	jobData.root = msg.data.root
+	local costRow = msg.data.costRow
+	local costCol = msg.data.costCol
 	
 	local x = msg.data.nextCell.x
 	local y = msg.data.nextCell.y
@@ -34,7 +34,7 @@ function work(msg)
 	end
 	
 	for i = x, y - 1 do
-		local rcost = tempCost + jobData.cost[x][i] + jobData.cost[i + 1][y]
+		local rcost = tempCost + costRow[i] + costCol[i + 1]
 		
 		if rcost < bestcost then
 			bestcost = rcost
@@ -42,9 +42,6 @@ function work(msg)
 		end
 	end
 	
-	jobData.cost[x][y] = bestcost
-	jobData.root[x][y] = bestroot
-
 	local workData = {
 		nextCost = bestcost,
 		nextRoot = bestroot,
