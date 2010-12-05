@@ -17,6 +17,7 @@ end
 
 function printResult(msg)
 	printMatrix(n + 1, n + 1, msg.data.cost, "cost")
+	print()
 	printMatrix(n + 1, n + 1, msg.data.root, "root")
 	alua.quit()
 end
